@@ -9,6 +9,7 @@ import { config } from "@/lib/wagmi-config";
 import type { ReactNode } from "react";
 import { useState, useEffect, createContext, useContext } from "react";
 import { tempoModerato } from "viem/chains";
+import { PrivyWalletBridge } from "./privy-wallet-bridge";
 
 type ColorMode = "light" | "dark";
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
@@ -92,6 +93,7 @@ export function Providers({ children }: { children: ReactNode }) {
       }}
     >
       <WagmiProvider config={config}>
+        <PrivyWalletBridge />
         <QueryClientProvider client={queryClient}>
           <ThemeContext.Provider value={{ mode, toggle }}>
             <ThemeProvider theme={mode === "light" ? lightTheme : darkTheme}>
