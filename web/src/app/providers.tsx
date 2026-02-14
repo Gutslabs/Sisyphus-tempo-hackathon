@@ -13,6 +13,12 @@ import { PrivyWalletBridge } from "./privy-wallet-bridge";
 
 type ColorMode = "light" | "dark";
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+const THEME_KEY = "sisyphus_theme";
+
+function applyThemeHint(next: ColorMode) {
+  if (typeof document === "undefined") return;
+  document.documentElement.dataset.sisyphusTheme = next;
+}
 
 interface ThemeContextValue {
   mode: ColorMode;
@@ -51,13 +57,15 @@ export function Providers({ children }: { children: ReactNode }) {
   // hydrate from localStorage (or default to system)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem("sisyphus_theme");
+    const stored = window.localStorage.getItem(THEME_KEY);
     if (stored === "light" || stored === "dark") {
       setMode(stored);
+      applyThemeHint(stored);
     } else {
       // Default to system preference
       const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
       setMode(systemPreference);
+      applyThemeHint(systemPreference);
     }
   }, []);
 
@@ -65,8 +73,9 @@ export function Providers({ children }: { children: ReactNode }) {
     setMode((prev) => {
       const next = prev === "light" ? "dark" : "light";
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("sisyphus_theme", next);
+        window.localStorage.setItem(THEME_KEY, next);
       }
+      applyThemeHint(next);
       return next;
     });
   };

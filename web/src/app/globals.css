@@ -8,6 +8,30 @@
 /* Body colors come from MUI CssBaseline + theme
    so light/dark mode stays in sync. */
 
+/* Prevent initial light flash on dark systems (before MUI hydrates). */
+html { color-scheme: light; background: #ffffff; }
+body { background: #ffffff; }
+
+@media (prefers-color-scheme: dark) {
+  html { color-scheme: dark; background: #101114; }
+  body { background: #101114; }
+}
+
+html[data-sisyphus-theme="dark"] { color-scheme: dark; background: #101114; }
+html[data-sisyphus-theme="dark"] body { background: #101114; color: #e8eaed; }
+html[data-sisyphus-theme="dark"] .MuiAppBar-root {
+  background-color: #18191c !important;
+  color: #e8eaed !important;
+  border-bottom: 1px solid #303134 !important;
+}
+html[data-sisyphus-theme="dark"] .MuiPaper-root {
+  background-color: #18191c !important;
+  border-color: #303134 !important;
+}
+html[data-sisyphus-theme="dark"] .MuiDrawer-paper {
+  background-color: #18191c !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -32,4 +56,3 @@
   50% { opacity: 0.4; }
 }
 .animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
-
