@@ -8,6 +8,7 @@ import { lightTheme, darkTheme } from "@/lib/theme";
 import { config } from "@/lib/wagmi-config";
 import type { ReactNode } from "react";
 import { useState, useEffect, createContext, useContext } from "react";
+import { tempoModerato } from "viem/chains";
 
 type ColorMode = "light" | "dark";
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
@@ -73,6 +74,11 @@ export function Providers({ children }: { children: ReactNode }) {
     <PrivyProvider
       appId={PRIVY_APP_ID}
       config={{
+        // Ensure Privy prompts external wallets to switch to Tempo Moderato on connection.
+        supportedChains: [tempoModerato],
+        defaultChain: tempoModerato,
+        // Enable email login in the Privy modal (must also be enabled in Privy dashboard).
+        loginMethods: ["email", "wallet"],
         // Customize Privy's appearance
         appearance: {
           theme: mode,

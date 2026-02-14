@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useConnect, useDisconnect, useConnectors } from "wagmi";
+import { useAccount, useChainId, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import {
   AppBar,
   Toolbar,
@@ -22,6 +22,7 @@ import { useState, useEffect } from "react";
 import { shortenAddress } from "@/lib/utils";
 import { useTempoFaucet, useTempoBalances } from "@/hooks/use-tempo";
 import { ConnectWalletDialog } from "./connect-wallet-dialog";
+import { tempoModerato } from "viem/chains";
 
 const TEMPO_EXPLORER = "https://explore.moderato.tempo.xyz";
 
@@ -35,14 +36,38 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { address, isConnected, connector } = useAccount();
   const { isPending: isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const { logout } = usePrivy();
   const { requestFunds, funding: faucetLoading } = useTempoFaucet();
   const { refresh: refreshBalances } = useTempoBalances();
 
   const [connectOpen, setConnectOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [switchAttempted, setSwitchAttempted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  // Best-effort: when a user connects an external wallet on a different network,
+  // prompt them to switch to Tempo Moderato once per connection session.
+  useEffect(() => {
+    if (!mounted) return;
+    if (!isConnected) {
+      setSwitchAttempted(false);
+      return;
+    }
+    if (chainId === tempoModerato.id) {
+      setSwitchAttempted(false);
+      return;
+    }
+    if (switchAttempted) return;
+    setSwitchAttempted(true);
+    try {
+      switchChain({ chainId: tempoModerato.id });
+    } catch {
+      // ignore (user rejected / connector doesn't support switching)
+    }
+  }, [mounted, isConnected, chainId, switchAttempted, switchChain]);
 
   const isPasskeyWallet = connector?.name === "WebAuthn" || connector?.id === "webAuthn";
 
