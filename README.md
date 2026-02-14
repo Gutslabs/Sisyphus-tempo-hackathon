@@ -3,8 +3,6 @@
 Sisyphus is a Tempo testnet app that turns plain English into signed on-chain transactions.
 The chat is the UI, but the model never gets anywhere near your keys: it returns a strict JSON action, and the browser executes that action through your connected wallet.
 
-If you're looking for RSI/MACD "strategies" or a trading bot backend: that was older work and is intentionally removed from this repo. What's left is the part we actually ship today: frontend + AI chat + Tempo chain actions.
-
 ## Problem statement
 
 Tempo makes execution cheap (stablecoin gas) and fast, but real user workflows are still annoying:
