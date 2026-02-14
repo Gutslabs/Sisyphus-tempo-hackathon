@@ -109,7 +109,11 @@ export function PrivyWalletBridge() {
         }
       }
     })().catch((e) => {
-      console.warn("PrivyWalletBridge failed:", e);
+      // Intentionally silent in production (we also silence console.* in RootLayout).
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.warn("PrivyWalletBridge failed:", e);
+      }
     });
 
     return () => {

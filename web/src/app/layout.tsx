@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const isProd = process.env.NODE_ENV === "production";
   return (
     <html lang="en">
       <head>
@@ -23,6 +24,36 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
     document.documentElement.dataset.sisyphusTheme = t;
+  } catch (e) {}
+})();`.trim(),
+          }}
+        />
+        {/* Silence browser console in production (prevents leaking debug output in public demos). */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  try {
+    if (!${isProd ? "true" : "false"}) return;
+    var noop = function () {};
+    var c = (typeof console !== "undefined" && console) ? console : null;
+    if (!c) return;
+    var methods = [
+      "log",
+      "info",
+      "debug",
+      "warn",
+      "error",
+      "trace",
+      "group",
+      "groupCollapsed",
+      "groupEnd"
+    ];
+    for (var i = 0; i < methods.length; i++) {
+      var m = methods[i];
+      if (typeof c[m] === "function") c[m] = noop;
+    }
   } catch (e) {}
 })();`.trim(),
           }}

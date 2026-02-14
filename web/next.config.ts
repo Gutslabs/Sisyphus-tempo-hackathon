@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  // Remove console.* from production bundles (client + server build output).
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
   // Standalone: single deployable bundle with all API routes and deps traced (fixes /api/tempo/* 404 in production)
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname),

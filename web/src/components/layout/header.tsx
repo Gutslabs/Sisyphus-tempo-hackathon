@@ -141,7 +141,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                       await requestFunds();
                       setTimeout(() => refreshBalances(), 3000);
                     } catch (err) {
-                      console.error(err);
+                      // Silent: faucet failure is non-critical; users can retry.
                     }
                   }}
                   disabled={faucetLoading}
