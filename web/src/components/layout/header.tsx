@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useChainId, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+import { useAccount, useChainId, useDisconnect, useSwitchChain } from "wagmi";
 import {
   AppBar,
   Toolbar,
@@ -34,7 +34,6 @@ import { usePrivy } from "@privy-io/react-auth";
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { address, isConnected, connector } = useAccount();
-  const { isPending: isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
@@ -116,9 +115,8 @@ export function Header({ onMenuClick }: HeaderProps) {
                 variant="contained"
                 startIcon={<WalletIcon />}
                 onClick={() => setConnectOpen(true)}
-                disabled={isConnecting}
               >
-                {isConnecting ? "Connecting..." : "Connect"}
+                Connect
               </Button>
               <ConnectWalletDialog open={connectOpen} onClose={() => setConnectOpen(false)} />
             </Box>

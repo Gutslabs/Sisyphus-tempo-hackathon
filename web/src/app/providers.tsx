@@ -1,7 +1,7 @@
 "use client";
 
 import { PrivyProvider } from "@privy-io/react-auth";
-import { WagmiProvider } from "wagmi";
+import { WagmiProvider } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, CssBaseline } from "@mui/material"; // Fixed imports
 import { lightTheme, darkTheme } from "@/lib/theme";
@@ -92,16 +92,16 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }}
     >
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <WagmiProvider config={config}>
           <ThemeContext.Provider value={{ mode, toggle }}>
             <ThemeProvider theme={mode === "light" ? lightTheme : darkTheme}>
               <CssBaseline />
               {children}
             </ThemeProvider>
           </ThemeContext.Provider>
-        </QueryClientProvider>
-      </WagmiProvider>
+        </WagmiProvider>
+      </QueryClientProvider>
     </PrivyProvider>
   );
 }

@@ -1,9 +1,8 @@
 "use client";
 
-import { createConfig, http } from "wagmi";
+import { createConfig } from "@privy-io/wagmi";
+import { http } from "wagmi";
 import { tempoModerato } from "viem/chains";
-import { KeyManager, webAuthn } from "wagmi/tempo";
-import { injected } from "wagmi/connectors";
 
 const TEMPO_RPC_DIRECT = "https://rpc.moderato.tempo.xyz";
 
@@ -16,30 +15,8 @@ function getTempoRpcUrl(): string {
   return TEMPO_RPC_DIRECT;
 }
 
-/**
- * Wagmi configuration for Tempo blockchain with dual connector support:
- * 1. webAuthn (Passkey) - default, supports batch transactions via `calls` array
- * 2. injected (MetaMask) - optional fallback, does NOT support batch TX
- */
 export const config = createConfig({
-  connectors: [
-    // Passkey connector - biometric auth with batch TX support
-    // Passkey connector - biometric auth with batch TX support
-    // Passkey connector - biometric auth with batch TX support
-    ...(typeof window !== "undefined"
-      ? [
-        webAuthn({
-          keyManager: KeyManager.localStorage(),
-          // Note: For production, switch to KeyManager.http('/keys') with a server backend
-        }),
-      ]
-      : []),
-    // MetaMask / other injected wallets
-    // injected(),
-  ],
   chains: [tempoModerato],
-  // Enable MetaMask auto-detection
-  multiInjectedProviderDiscovery: true,
   transports: {
     [tempoModerato.id]: http(getTempoRpcUrl()),
   },
