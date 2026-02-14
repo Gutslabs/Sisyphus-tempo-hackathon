@@ -383,11 +383,8 @@ export function ChatPanel() {
           aiMessage.content = [aiMessage.content, `**Error:** ${errMsg}`].filter(Boolean).join("\n\n");
         }
       } else {
-        const extra =
-          rawAction == null
-            ? "AI did not return a structured action, so no on-chain transaction was executed. Try rephrasing or start a new chat."
-            : "Could not run the requested action (invalid format). Try rephrasing or start a new chat.";
-        aiMessage.content = [aiMessage.content, extra].filter(Boolean).join("\n\n");
+        // If the model didn't return an actionable JSON, keep the assistant message as-is.
+        // (We intentionally avoid appending a repetitive boilerplate warning.)
       }
       await addMessage(aiMessage);
     } catch {
@@ -587,6 +584,7 @@ export function ChatPanel() {
             {/* Input Area - flexShrink: 0 so it never gets cut off; overflow visible so chips are never clipped */}
             <Box sx={{ flexShrink: 0, minWidth: 0, width: "100%", overflow: "visible", p: 3, pt: 2, pb: 3, borderTop: 1, borderColor: "divider", bgcolor: "background.paper" }}>
               <Paper
+                data-tour="chat-input"
                 component="form"
                 onSubmit={handleSubmit}
                 elevation={0}
@@ -608,7 +606,7 @@ export function ChatPanel() {
                   };
                 }}
               >
-                <IconButton onClick={() => fileInputRef.current?.click()} disabled={isLoading} size="small">
+                <IconButton data-tour="chat-upload" onClick={() => fileInputRef.current?.click()} disabled={isLoading} size="small">
                   <PaperclipIcon />
                 </IconButton>
                 <input

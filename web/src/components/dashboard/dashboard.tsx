@@ -238,6 +238,7 @@ export function Dashboard() {
 
       {/* Open Limit Orders - Bid row and Ask row, full width */}
       <Paper
+        data-tour="dashboard-orders"
         elevation={0}
         sx={(theme) => ({
           p: { xs: 2, md: 3 },

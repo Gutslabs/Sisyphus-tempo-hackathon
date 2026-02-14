@@ -106,6 +106,7 @@ export function PaymentsSchedules() {
   return (
     <>
       <Paper
+        data-tour="payments-schedules"
         variant="outlined"
         sx={(theme) => ({
           borderRadius: 3,

@@ -139,6 +139,7 @@ export function TxView() {
         </Paper>
       ) : (
         <TableContainer
+          data-tour="tx-table"
           component={Paper}
           variant="outlined"
           sx={(theme) => ({

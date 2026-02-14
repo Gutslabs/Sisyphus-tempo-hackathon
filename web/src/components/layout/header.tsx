@@ -100,6 +100,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </Box>
         {/* Wallet */}
         <Box
+          data-tour="wallet-area"
           sx={{
             display: "flex",
             alignItems: "center",
@@ -112,6 +113,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           {!mounted ? null : !isConnected ? (
             <Box>
               <Button
+                data-tour="wallet-connect"
                 variant="contained"
                 startIcon={<WalletIcon />}
                 onClick={() => setConnectOpen(true)}
@@ -130,6 +132,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   sx={{ fontSize: "0.65rem", height: 20 }}
                 />
                 <Button
+                  data-tour="faucet"
                   variant="contained"
                   size="small"
                   startIcon={<FaucetIcon sx={{ fontSize: 16 }} />}

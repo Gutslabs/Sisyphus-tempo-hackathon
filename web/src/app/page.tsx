@@ -7,6 +7,7 @@ import { Dashboard } from "@/components/dashboard/dashboard";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { PaymentsView } from "@/components/payments/payments-view";
 import { TxView } from "@/components/tx/tx-view";
+import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 
 export type View = "dashboard" | "chat" | "payments" | "tx";
 
@@ -52,7 +53,10 @@ export default function Home() {
   // Optionally auto-collapse when first entering chat; keep user toggle afterwards
   useEffect(() => {
     if (view === "chat") {
-      setDesktopSidebarCollapsed(true);
+      // During onboarding we keep the sidebar visible so the tour can highlight navigation items.
+      const tourActive =
+        typeof window !== "undefined" && window.localStorage.getItem("sisyphus_onboarding_active") === "1";
+      if (!tourActive) setDesktopSidebarCollapsed(true);
     }
   }, [view]);
 
@@ -75,6 +79,7 @@ export default function Home() {
           {view === "tx" && <TxView />}
         </main>
       </div>
+      <OnboardingTour />
     </div>
   );
 }

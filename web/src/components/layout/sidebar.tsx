@@ -113,6 +113,7 @@ function SidebarContent({
         {NAV_ITEMS.map((item) => (
           <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
+              data-tour={`nav-${item.id}`}
               onClick={() => onViewChange(item.id)}
               selected={activeView === item.id}
               sx={{
@@ -272,6 +273,7 @@ export function Sidebar({
         }}
       >
         <IconButton
+          data-tour="nav-collapse"
           size="small"
           onClick={onDesktopToggle}
           sx={(theme) => ({

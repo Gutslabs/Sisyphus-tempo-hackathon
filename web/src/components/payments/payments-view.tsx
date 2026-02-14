@@ -209,6 +209,7 @@ export function PaymentsView() {
 
   return (
     <Box
+      data-tour="payments-page"
       sx={(theme) => ({
         width: "100%",
         minWidth: 0,
@@ -240,6 +241,7 @@ export function PaymentsView() {
       <Grid container spacing={2.5} alignItems="stretch">
         <Grid size={{ xs: 12, lg: 5 }}>
           <Paper
+            data-tour="payments-create"
             variant="outlined"
             sx={(theme) => ({
               p: { xs: 2, md: 2.5 },
@@ -254,6 +256,7 @@ export function PaymentsView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
               <Typography sx={{ fontWeight: 800 }}>Create payment</Typography>
               <Tabs
+                data-tour="payments-tabs"
                 value={tab}
                 onChange={(_, v) => setTab(v)}
                 variant="scrollable"
