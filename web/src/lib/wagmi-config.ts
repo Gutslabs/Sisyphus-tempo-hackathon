@@ -1,8 +1,9 @@
 "use client";
 
-import { createConfig } from "@privy-io/wagmi";
-import { http } from "wagmi";
+import { createConfig, http } from "wagmi";
 import { tempoModerato } from "viem/chains";
+import { KeyManager, webAuthn } from "wagmi/tempo";
+import { injected } from "wagmi/connectors";
 
 const TEMPO_RPC_DIRECT = "https://rpc.moderato.tempo.xyz";
 
@@ -16,7 +17,20 @@ function getTempoRpcUrl(): string {
 }
 
 export const config = createConfig({
+  connectors: [
+    ...(typeof window !== "undefined"
+      ? [
+        // Tempo passkey connector (WebAuthn)
+        webAuthn({
+          keyManager: KeyManager.localStorage(),
+        }),
+        // External wallets (MetaMask, Coinbase extension, etc.)
+        injected(),
+      ]
+      : []),
+  ],
   chains: [tempoModerato],
+  multiInjectedProviderDiscovery: true,
   transports: {
     [tempoModerato.id]: http(getTempoRpcUrl()),
   },

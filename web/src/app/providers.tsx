@@ -1,7 +1,7 @@
 "use client";
 
 import { PrivyProvider } from "@privy-io/react-auth";
-import { WagmiProvider } from "@privy-io/wagmi";
+import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, CssBaseline } from "@mui/material"; // Fixed imports
 import { lightTheme, darkTheme } from "@/lib/theme";
@@ -74,12 +74,10 @@ export function Providers({ children }: { children: ReactNode }) {
     <PrivyProvider
       appId={PRIVY_APP_ID}
       config={{
-        // Ensure Privy prompts external wallets to switch to Tempo Moderato on connection.
+        // Keep Privy only for email login (Tempo passkeys + external wallets are handled by wagmi).
         supportedChains: [tempoModerato],
         defaultChain: tempoModerato,
-        // Enable email login in the Privy modal (must also be enabled in Privy dashboard).
-        // Enable passkey + email + external wallet login in the Privy modal (must also be enabled in Privy dashboard).
-        loginMethods: ["passkey", "email", "wallet"],
+        loginMethods: ["email"],
         // Customize Privy's appearance
         appearance: {
           theme: mode,
@@ -93,16 +91,16 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }}
     >
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
           <ThemeContext.Provider value={{ mode, toggle }}>
             <ThemeProvider theme={mode === "light" ? lightTheme : darkTheme}>
               <CssBaseline />
               {children}
             </ThemeProvider>
           </ThemeContext.Provider>
-        </WagmiProvider>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
     </PrivyProvider>
   );
 }

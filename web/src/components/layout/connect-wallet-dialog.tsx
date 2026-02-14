@@ -22,6 +22,8 @@ import {
     Close as CloseIcon,
 } from "@mui/icons-material";
 import { usePrivy } from "@privy-io/react-auth";
+import { useConnect } from "wagmi";
+import { useMemo } from "react";
 
 interface ConnectWalletDialogProps {
     open: boolean;
@@ -31,16 +33,30 @@ interface ConnectWalletDialogProps {
 export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps) {
     const theme = useTheme();
     const { login } = usePrivy();
-    const handlePasskey = () => {
-        login({ loginMethods: ["passkey"] });
+    const { connectors, connect, isPending } = useConnect();
+    const webAuthnConnector = useMemo(() => connectors.find((c) => c.id === "webAuthn"), [connectors]);
+    const injectedConnector = useMemo(() => connectors.find((c) => c.id === "injected"), [connectors]);
+
+    const handlePasskeyLogin = () => {
+        if (!webAuthnConnector) return;
+        connect({ connector: webAuthnConnector });
         onClose();
     };
+
+    const handlePasskeySignup = () => {
+        if (!webAuthnConnector) return;
+        // @ts-expect-error - wagmi/tempo connector supports capabilities for passkey registration
+        connect({ connector: webAuthnConnector, capabilities: { type: "sign-up", label: "Tempo User" } });
+        onClose();
+    };
+
     const handleEmail = () => {
         login({ loginMethods: ["email"] });
         onClose();
     };
     const handleWallet = () => {
-        login({ loginMethods: ["wallet"] });
+        if (!injectedConnector) return;
+        connect({ connector: injectedConnector });
         onClose();
     };
 
@@ -79,7 +95,8 @@ export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps)
                 <List sx={{ px: 2, pb: 3 }}>
                     <ListItem disablePadding sx={{ mb: 1.5 }}>
                         <ListItemButton
-                            onClick={handlePasskey}
+                            onClick={handlePasskeySignup}
+                            disabled={!webAuthnConnector || isPending}
                             sx={{
                                 borderRadius: 3,
                                 border: `1px solid ${theme.palette.divider}`,
@@ -97,8 +114,36 @@ export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps)
                                 <FingerprintIcon />
                             </ListItemIcon>
                             <ListItemText
-                                primary="Continue with Passkey"
+                                primary="Create Passkey"
                                 secondary="Biometric / security key"
+                                primaryTypographyProps={{ fontWeight: 600 }}
+                            />
+                        </ListItemButton>
+                    </ListItem>
+
+                    <ListItem disablePadding sx={{ mb: 1.5 }}>
+                        <ListItemButton
+                            onClick={handlePasskeyLogin}
+                            disabled={!webAuthnConnector || isPending}
+                            sx={{
+                                borderRadius: 3,
+                                border: `1px solid ${theme.palette.divider}`,
+                                py: 1.5,
+                                transition: "all 0.2s",
+                                "&:hover": {
+                                    borderColor: theme.palette.primary.main,
+                                    bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                    transform: "translateY(-1px)",
+                                    boxShadow: 2
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ minWidth: 40, color: "primary.main" }}>
+                                <FingerprintIcon />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary="Use Passkey"
+                                secondary="Sign in with existing passkey"
                                 primaryTypographyProps={{ fontWeight: 600 }}
                             />
                         </ListItemButton>
@@ -134,6 +179,7 @@ export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps)
                     <ListItem disablePadding>
                         <ListItemButton
                             onClick={handleWallet}
+                            disabled={!injectedConnector || isPending}
                             sx={{
                                 borderRadius: 3,
                                 bgcolor: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
