@@ -19,12 +19,15 @@ import {
   Schedule as PaymentsIcon,
   ReceiptLong as TxIcon,
   Circle as CircleIcon,
+  GitHub as GitHubIcon,
   ChevronRight as ChevronRightIcon,
   ChevronLeft as ChevronLeftIcon,
 } from "@mui/icons-material";
 import type { View } from "@/app/page";
 import { useThemeMode } from "@/app/providers";
 import { useState, useEffect } from "react";
+
+const GITHUB_REPO_URL = "https://github.com/Gutslabs/Sisyphus-tempo-hackathon";
 
 const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
@@ -157,6 +160,35 @@ function SidebarContent({
       </List>
 
       <Box sx={{ mt: "auto", p: variant === "temporary" ? 3 : { xs: 3, md: 1.5, lg: 3 }, display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* Repo link */}
+        <ListItemButton
+          component="a"
+          href={GITHUB_REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{
+            borderRadius: 10,
+            px: variant === "temporary" ? 2 : { xs: 1, lg: 2 },
+            py: 1,
+            "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              minWidth: variant === "temporary" ? 40 : { xs: 0, lg: 40 },
+              justifyContent: "center",
+            }}
+          >
+            <GitHubIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary="GitHub"
+            primaryTypographyProps={{ variant: "body2", fontWeight: 600 }}
+            sx={{
+              display: variant === "temporary" ? "block" : { xs: "none", lg: "block" },
+            }}
+          />
+        </ListItemButton>
 
 
         {/* Theme toggle */}
