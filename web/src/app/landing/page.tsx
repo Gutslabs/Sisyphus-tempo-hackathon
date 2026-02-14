@@ -6,7 +6,6 @@ import { LandingChat } from "@/components/landing/landing-chat";
 
 export default function LandingPage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "/";
-  const dashboardHref = appUrl.includes("?") ? `${appUrl}&tour=1` : `${appUrl}?tour=1`;
 
   return (
     <Box
@@ -69,7 +68,7 @@ export default function LandingPage() {
               mt: { xs: 0.5, sm: 1 },
             }}
           >
-            <Button component={Link} href={dashboardHref} variant="contained" size="small">
+            <Button component={Link} href={appUrl} variant="contained" size="small">
               Go to dashboard
             </Button>
           </Box>
