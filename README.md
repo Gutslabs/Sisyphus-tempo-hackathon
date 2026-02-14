@@ -5,8 +5,6 @@ The chat is the UI, but the model never gets anywhere near your keys: it returns
 
 ## Problem statement
 
-Tempo makes execution cheap (stablecoin gas) and fast, but real user workflows are still annoying:
-
 - People jump between multiple UIs for basic tasks (send, swap, orderbook, scheduler, explorer).
 - "I'll send this later" or "send this every week" is easy to say, but needs a reliable on-chain + off-chain loop to actually happen.
 - Spreadsheet payments turn into click-heavy UX (approve/confirm for every row).
