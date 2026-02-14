@@ -57,6 +57,7 @@ scripts/
 
 # Web Specific
 web/.next/
+web/.next.bak.*/
 web/out/
 web/build/
 web/dist/
