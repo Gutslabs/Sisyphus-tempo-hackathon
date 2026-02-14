@@ -56,6 +56,33 @@ forge test
 
    To pay gas in pathUSD, add `--fee-token 0x20c0000000000000000000000000000000000000` to the `forge create` line in `deploy.sh`.
 
+## Optional: Deploy BatchTransfer (for 1-tx CSV bulk sends with Privy embedded wallets)
+
+Privy embedded wallets are EOAs and do not support Tempo's native passkey batch call flow.
+To send many token transfers in a single on-chain transaction, deploy `BatchTransfer` and set its address in the web app env.
+
+1. Add your key to `contracts/.env` (file is gitignored):
+
+   ```bash
+   echo 'PRIVATE_KEY=0x...' >> .env
+   ```
+
+2. Deploy:
+
+   ```bash
+   ./deploy-batch-transfer.sh
+   ```
+
+3. Set in `web/.env.local`:
+
+   ```bash
+   NEXT_PUBLIC_BATCH_TRANSFER_ADDRESS=0x...
+   ```
+
+Notes:
+- The first time you use it, you will be prompted to `approve` each token once (AlphaUSD/BetaUSD/etc).
+- After approval, CSV bulk sends become 1 on-chain transaction.
+
 4. Verify on explorer (optional):
 
    ```bash
