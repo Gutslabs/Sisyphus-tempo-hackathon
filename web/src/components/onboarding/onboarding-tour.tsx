@@ -301,7 +301,7 @@ export function OnboardingTour() {
     height: clamp(targetRect.height + pad * 2, 24, window.innerHeight - 16),
   };
 
-  const cardW = 360;
+  const cardW = Math.min(360, Math.max(280, window.innerWidth - 24));
   const preferBelow = hl.top + hl.height + 16 + 220 < window.innerHeight;
   const rawTop = preferBelow ? hl.top + hl.height + 14 : hl.top - 14 - 220;
   const rawLeft = hl.left + Math.min(hl.width - 40, 24);

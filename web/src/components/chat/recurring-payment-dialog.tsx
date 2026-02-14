@@ -162,7 +162,7 @@ export function RecurringPaymentDialog({
             fullWidth
             size="small"
           />
-          <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
             <TextField
               label="Amount"
               value={amount}
@@ -179,7 +179,8 @@ export function RecurringPaymentDialog({
               value={token}
               onChange={(e) => setToken(e.target.value)}
               size="small"
-              sx={{ minWidth: 140 }}
+              fullWidth
+              sx={{ minWidth: { xs: 0, sm: 140 } }}
             >
               {TOKENS.map((t) => (
                 <MenuItem key={t} value={t}>{t}</MenuItem>

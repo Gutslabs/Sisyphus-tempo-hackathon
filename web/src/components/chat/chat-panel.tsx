@@ -49,18 +49,13 @@ const WELCOME_MESSAGE: ChatMessageType = {
   id: "welcome",
   role: "system",
   content:
-    'Welcome to Sisyphus. You can:\n' +
-    '• Deploy token: "Deploy a new ERC20 called MYTOKEN with 1,000,000 supply"\n' +
-    '• Create pair: "Create a pair for my MYTOKEN token with pathUSD"\n' +
-    '• Add liquidity: "Add 1,000 MYTOKEN and 500 pathUSD to the pool"\n' +
-    '• Swap: "Swap 100 pathUSD to BetaUSD"\n' +
-    '• Limit order: "Buy 100 BetaUSD at 0.999" or "Sell 50 AlphaUSD at 1.001"\n' +
-    '• Batch transfers: "Send 50 AlphaUSD to 0x1, 0x2, 0x3"\n' +
-    '• Scheduled payment: "On March 15 send 100 AlphaUSD to 0x..."\n' +
-    '• Recurring payment: "Send 50 pathUSD to 0x... every week"\n' +
-    '• Upload CSV/TXT/XLSX/PDF: Bulk parallel payments from file\n' +
-    '• Check balances: "Show my balance"\n' +
-    '• Faucet: "Get testnet funds"',
+    "Welcome to Sisyphus. How can I help?\n" +
+    "\n" +
+    "Try:\n" +
+    '• "Show my balance"\n' +
+    '• "Swap 100 AlphaUSD to BetaUSD"\n' +
+    '• "Schedule 100 AlphaUSD to 0x... tomorrow"\n' +
+    "• Upload a CSV/XLSX/PDF to run batch transfers",
   // Use stable timestamp to avoid SSR/client mismatch.
   timestamp: 0,
 };
@@ -547,7 +542,7 @@ export function ChatPanel() {
         ) : (
           <>
             {/* Messages List - full width, scrolls when content grows */}
-            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, width: "100%", overflowY: "auto", overflowX: "hidden", p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, width: "100%", overflowY: "auto", overflowX: "hidden", p: { xs: 2, sm: 3 }, display: "flex", flexDirection: "column", gap: { xs: 2, sm: 3 } }}>
               {historyLoading && (
                 <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress size={24} /></Box>
               )}
@@ -582,7 +577,7 @@ export function ChatPanel() {
             </Box>
 
             {/* Input Area - flexShrink: 0 so it never gets cut off; overflow visible so chips are never clipped */}
-            <Box sx={{ flexShrink: 0, minWidth: 0, width: "100%", overflow: "visible", p: 3, pt: 2, pb: 3, borderTop: 1, borderColor: "divider", bgcolor: "background.paper" }}>
+            <Box sx={{ flexShrink: 0, minWidth: 0, width: "100%", overflow: "visible", p: { xs: 2, sm: 3 }, pt: { xs: 1.5, sm: 2 }, pb: { xs: 2, sm: 3 }, borderTop: 1, borderColor: "divider", bgcolor: "background.paper" }}>
               <Paper
                 data-tour="chat-input"
                 component="form"

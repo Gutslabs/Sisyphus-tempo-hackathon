@@ -57,36 +57,47 @@ export function ChatMessage({ message }: { message: ChatMessageType }) {
   const isSystem = message.role === "system";
 
   return (
-    <Box sx={{ display: "flex", gap: 2, flexDirection: isUser ? "row-reverse" : "row", alignItems: "flex-start" }}>
+    <Box sx={{ display: "flex", gap: { xs: 1.5, sm: 2 }, flexDirection: isUser ? "row-reverse" : "row", alignItems: "flex-start" }}>
       <Avatar
         sx={(theme) => ({
-          bgcolor: isUser
-            ? theme.palette.mode === "dark"
-              ? theme.palette.primary.main
-              : theme.palette.primary.main
-            : isSystem
-              ? "warning.light"
-              : theme.palette.primary.main,
-          width: 32,
-          height: 32,
+          bgcolor: (() => {
+            const isDark = theme.palette.mode === "dark";
+            if (isUser) return theme.palette.primary.main;
+            if (isSystem) return isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.08)";
+            return theme.palette.primary.main;
+          })(),
+          color: isSystem ? "text.primary" : undefined,
+          width: { xs: 28, sm: 32 },
+          height: { xs: 28, sm: 32 },
         })}
       >
         {isUser ? <UserIcon sx={{ fontSize: 18 }} /> : isSystem ? <AlertCircleIcon sx={{ fontSize: 18 }} /> : <BotIcon sx={{ fontSize: 18 }} />}
       </Avatar>
-      <Box sx={{ maxWidth: "80%", display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start", gap: 1 }}>
+      <Box
+        sx={{
+          maxWidth: { xs: "100%", sm: "86%", md: "80%" },
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: isUser ? "flex-end" : "flex-start",
+          gap: 1,
+        }}
+      >
         <Paper
           elevation={0}
           sx={(theme) => {
             const isDark = theme.palette.mode === "dark";
             const userBg = isDark ? "#303134" : "#f1f3f4";
             const aiBg = isDark ? "#202124" : "#f8f9fa";
+            const systemBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.03)";
             return {
-              p: 2,
+              p: { xs: 1.5, sm: 2 },
               borderRadius: 3,
-              bgcolor: isUser ? userBg : isSystem ? "rgba(253, 214, 99, 0.1)" : aiBg,
+              bgcolor: isUser ? userBg : isSystem ? systemBg : aiBg,
               color: theme.palette.text.primary,
               whiteSpace: "pre-line",
-              fontSize: "0.9rem",
+              overflowWrap: "anywhere",
+              fontSize: { xs: "0.88rem", sm: "0.9rem" },
               lineHeight: 1.5,
             };
           }}
