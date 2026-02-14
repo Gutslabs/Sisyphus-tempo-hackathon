@@ -7,7 +7,6 @@ import {
   Typography, 
   Grid, 
   Paper, 
-  Button, 
   IconButton, 
   Avatar, 
   Chip, 
@@ -18,18 +17,13 @@ import {
 import { 
   AccountBalanceWallet as WalletIcon, 
   OpenInNew as ExternalLinkIcon,
-  Event as ScheduledIcon,
-  Repeat as RecurringIcon,
   History as ActivityIcon,
   Close as CloseIcon,
-  PlayArrow as PlayIcon
 } from "@mui/icons-material";
-import { useTempoBalances, useTempoLimitOrder, useTempoScheduler } from "@/hooks/use-tempo";
-import { tokenIconUrl, explorerAddressUrl, explorerTxUrl, getPublicClient, EXCHANGE_ABI, TEMPO_EXCHANGE_ADDRESS } from "@/lib/tempo";
+import { useTempoBalances, useTempoLimitOrder } from "@/hooks/use-tempo";
+import { tokenIconUrl, explorerAddressUrl, getPublicClient, EXCHANGE_ABI, TEMPO_EXCHANGE_ADDRESS } from "@/lib/tempo";
 import { decodeEventLog, type Hash } from "viem";
 import { recordTransaction } from "@/lib/record-tx";
-import { shortenAddress } from "@/lib/utils";
-import type { OneTimeScheduleItem, RecurringScheduleItem } from "@/lib/schedule-types";
 
 type OpenOrder = {
   id: string;
@@ -46,22 +40,15 @@ type OpenOrder = {
 export function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const { isConnected } = useAccount();
-  const { balances, loading: balancesLoading, error: balanceError, refresh: refreshBalances, address } = useTempoBalances();
+  const { balances, loading: balancesLoading, error: balanceError, address } = useTempoBalances();
 
   useEffect(() => {
     setMounted(true);
   }, []);
   const { cancelOrder, placing: cancelPending } = useTempoLimitOrder();
-  const { executeScheduled, scheduling: schedulerPending } = useTempoScheduler();
   const [openOrders, setOpenOrders] = useState<OpenOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [executingScheduleId, setExecutingScheduleId] = useState<number | null>(null);
-  const [oneTimeSchedules, setOneTimeSchedules] = useState<OneTimeScheduleItem[]>([]);
-  const [recurringSchedules, setRecurringSchedules] = useState<RecurringScheduleItem[]>([]);
-  const [schedulesLoading, setSchedulesLoading] = useState(false);
-
-  const nowSeconds = Math.floor(Date.now() / 1000);
 
   const resolveOrderId = useCallback(async (order: OpenOrder): Promise<string | null> => {
     if (order.on_chain_order_id && order.on_chain_order_id !== "") return order.on_chain_order_id;
@@ -119,38 +106,17 @@ export function Dashboard() {
     }
   }, []);
 
-  const fetchSchedules = useCallback(async (wallet: string) => {
-    setSchedulesLoading(true);
-    try {
-      const res = await fetch(`/api/tempo/schedules?wallet=${encodeURIComponent(wallet)}`);
-      const data = await res.json();
-      if (data.oneTime) setOneTimeSchedules(data.oneTime);
-      else setOneTimeSchedules([]);
-      if (data.recurring) setRecurringSchedules(data.recurring);
-      else setRecurringSchedules([]);
-    } catch {
-      setOneTimeSchedules([]);
-      setRecurringSchedules([]);
-    } finally {
-      setSchedulesLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     if (address) {
       fetchOpenOrders(address);
-      fetchSchedules(address);
       const interval = setInterval(() => {
         fetchOpenOrders(address);
-        fetchSchedules(address);
       }, 30_000);
       return () => clearInterval(interval);
     } else {
       setOpenOrders([]);
-      setOneTimeSchedules([]);
-      setRecurringSchedules([]);
     }
-  }, [address, fetchOpenOrders, fetchSchedules]);
+  }, [address, fetchOpenOrders]);
 
   const totalBalance = balances.reduce((sum, b) => sum + Number(b.formatted), 0);
 
@@ -269,175 +235,6 @@ export function Dashboard() {
           </Grid>
         </Paper>
       )}
-
-      {/* Scheduled Payments - full width row */}
-      <Paper
-        elevation={0}
-        sx={(theme) => ({
-          p: { xs: 2, md: 3 },
-          borderRadius: 3,
-          width: "100%",
-          bgcolor: theme.palette.background.paper,
-        })}
-      >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-              <ScheduledIcon color="action" fontSize="small" />
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "text.secondary" }}>
-                Scheduled Payments
-              </Typography>
-            </Box>
-            
-            {schedulesLoading && oneTimeSchedules.length === 0 ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress size={24} /></Box>
-            ) : oneTimeSchedules.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-                No one-time scheduled payments.
-              </Typography>
-            ) : (
-              <Stack spacing={2}>
-                {oneTimeSchedules.map((s) => (
-                  <Paper key={s.id} variant="outlined" sx={{ p: 2, borderRadius: 2, opacity: (s.executed || s.cancelled) ? 0.6 : 1 }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "monospace" }}>
-                        {s.amount} {s.tokenSymbol} → {shortenAddress(s.recipient)}
-                      </Typography>
-                      <Chip 
-                        label={s.executed ? "Executed" : s.cancelled ? "Cancelled" : "Pending"} 
-                        size="small"
-                        color={s.executed ? "success" : s.cancelled ? "default" : "primary"}
-                        sx={{ height: 20, fontSize: "0.65rem", fontWeight: 700 }}
-                      />
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {s.executed || s.cancelled ? "Was: " : "Due: "}
-                        {new Date(s.executeAt * 1000).toLocaleString()}
-                      </Typography>
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        {!s.executed && !s.cancelled && s.executeAt <= nowSeconds && (
-                          <Button 
-                            size="small" 
-                            variant="contained" 
-                            color="success"
-                            startIcon={<PlayIcon sx={{ fontSize: 14 }} />}
-                            onClick={async () => {
-                              setExecutingScheduleId(s.id);
-                              try {
-                                const result = await executeScheduled(s.id);
-                                if (address && result?.hash) {
-                                  recordTransaction({
-                                    wallet_address: address,
-                                    tx_hash: result.hash,
-                                    type: "execute_scheduled",
-                                  });
-                                }
-                                if (address) {
-                                  fetchSchedules(address);
-                                  refreshBalances();
-                                }
-                              } catch (e) {
-                                // Ignore execution failures; user can retry manually.
-                              } finally {
-                                setExecutingScheduleId(null);
-                              }
-                            }}
-                            disabled={schedulerPending || executingScheduleId === s.id}
-                            sx={{ py: 0, px: 1, fontSize: "0.65rem" }}
-                          >
-                            Execute
-                          </Button>
-                        )}
-                        {s.creationTxHash && (
-                          <Tooltip title="View creation tx">
-                            <IconButton size="small" href={explorerTxUrl(s.creationTxHash)} target="_blank" rel="noopener noreferrer">
-                              <ExternalLinkIcon sx={{ fontSize: 14 }} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {s.executionTxHash && (
-                          <Tooltip title="View execution tx">
-                            <IconButton size="small" href={explorerTxUrl(s.executionTxHash)} target="_blank" rel="noopener noreferrer" color="success">
-                              <ExternalLinkIcon sx={{ fontSize: 14 }} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </Box>
-                  </Paper>
-                ))}
-              </Stack>
-            )}
-      </Paper>
-
-      {/* Recurring Payments - full width row */}
-      <Paper
-        elevation={0}
-        sx={(theme) => ({
-          p: { xs: 2, md: 3 },
-          borderRadius: 3,
-          width: "100%",
-          bgcolor: theme.palette.background.paper,
-        })}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-          <RecurringIcon color="action" fontSize="small" />
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "text.secondary" }}>
-            Recurring Payments
-          </Typography>
-        </Box>
-
-            {schedulesLoading && recurringSchedules.length === 0 ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress size={24} /></Box>
-            ) : recurringSchedules.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-                No recurring payments.
-              </Typography>
-            ) : (
-              <Stack spacing={2}>
-                {recurringSchedules.map((s) => (
-                  <Paper key={s.id} variant="outlined" sx={{ p: 2, borderRadius: 2, opacity: s.cancelled ? 0.6 : 1 }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "monospace" }}>
-                        {s.amount} {s.tokenSymbol} → {shortenAddress(s.recipient)}
-                      </Typography>
-                      <Chip 
-                        label={s.cancelled ? "Cancelled" : "Active"} 
-                        size="small"
-                        color={s.cancelled ? "default" : "primary"}
-                        sx={{ height: 20, fontSize: "0.65rem", fontWeight: 700 }}
-                      />
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Next: {new Date(s.nextDueTime * 1000).toLocaleString()}
-                        {s.intervalSeconds >= 86400 && (
-                          <Box component="span" sx={{ ml: 1, fontWeight: 600 }}>
-                            (every {s.intervalSeconds >= 2592000 ? `${Math.round(s.intervalSeconds / 2592000)}mo` : s.intervalSeconds >= 604800 ? `${Math.round(s.intervalSeconds / 604800)}wk` : `${Math.round(s.intervalSeconds / 86400)}d`})
-                          </Box>
-                        )}
-                      </Typography>
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        {s.creationTxHash && (
-                          <Tooltip title="View creation tx">
-                            <IconButton size="small" href={explorerTxUrl(s.creationTxHash)} target="_blank" rel="noopener noreferrer">
-                              <ExternalLinkIcon sx={{ fontSize: 14 }} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {s.executionTxHashes.length > 0 && (
-                          <Tooltip title={`Last execution (${s.executionTxHashes.length} total)`}>
-                            <IconButton size="small" href={explorerTxUrl(s.executionTxHashes[s.executionTxHashes.length - 1]!)} target="_blank" rel="noopener noreferrer" color="success">
-                              <ExternalLinkIcon sx={{ fontSize: 14 }} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </Box>
-                  </Paper>
-                ))}
-              </Stack>
-            )}
-      </Paper>
 
       {/* Open Limit Orders - Bid row and Ask row, full width */}
       <Paper

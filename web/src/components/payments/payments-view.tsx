@@ -20,6 +20,7 @@ import { useAccount } from "wagmi";
 import type { Address } from "viem";
 import { useTempoBalances, useTempoScheduler } from "@/hooks/use-tempo";
 import { recordTransaction } from "@/lib/record-tx";
+import { PaymentsSchedules } from "./payments-schedules";
 
 const TOKENS = ["pathUSD", "AlphaUSD", "BetaUSD", "ThetaUSD"] as const;
 const INTERVALS = [
@@ -383,7 +384,8 @@ export function PaymentsView() {
           </Box>
         </Box>
       </Paper>
+
+      <PaymentsSchedules />
     </Box>
   );
 }
-
