@@ -1,0 +1,18 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "description": "One-time **scheduled** and **recurring** payments for TIP-20 tokens on Tempo. Built with **OpenZeppelin** (SafeERC20, ReentrancyGuard, Ownable, Pausable).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0"
+  },
+  "devDependencies": {
+    "forge-std": "^1.1.2"
+  }
+}

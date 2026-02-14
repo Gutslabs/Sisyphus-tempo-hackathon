@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/tempo/schedules/execute-due",
+      "schedule": "* * * * *"
+    }
+  ]
+}

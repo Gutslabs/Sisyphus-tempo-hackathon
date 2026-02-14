@@ -1,0 +1,77 @@
+# System
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+
+# Build & Logs
+dist/
+build/
+.next/
+out/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Secrets (CRITICAL)
+.env
+.env.production
+.env.development
+.env.local
+.env.*.local
+.envrc
+.envrc.local
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+deploy-secrets.env
+
+# Database & Data
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+data/*.db
+data/*.sqlite
+data/*.json
+data/audit/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project docs/scripts (keep local only)
+docs/
+scripts/
+
+# Web Specific
+web/.next/
+web/out/
+web/build/
+web/dist/
+web/scripts/easter-egg-*.mjs
+
+# Hardhat / Foundry / Contracts
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/coverage/
+contracts/reports/
+contracts/out/
+contracts/broadcast/
+
+# Rust / Tempo
+tempo/
+target/
+**/*.rs.bk

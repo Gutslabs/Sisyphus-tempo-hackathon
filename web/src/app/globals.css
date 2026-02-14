@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Google Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Google Sans Mono", "JetBrains Mono", "SF Mono", monospace;
+}
+
+/* Body colors come from MUI CssBaseline + theme
+   so light/dark mode stays in sync. */
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+

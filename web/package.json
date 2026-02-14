@@ -1,0 +1,51 @@
+{
+  "name": "@tempo-agent/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "cron:execute-due": "node scripts/trigger-execute-due.js"
+  },
+  "dependencies": {
+    "@coinbase/wallet-sdk": "4.2.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.7",
+    "@mui/material": "^7.3.7",
+    "@privy-io/react-auth": "^3.13.1",
+    "@privy-io/wagmi": "^4.0.1",
+    "@supabase/supabase-js": "^2.95.3",
+    "@tanstack/react-query": "^5.62.0",
+    "@walletconnect/ethereum-provider": "2.22.4",
+    "buffer": "^6.0.3",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.474.0",
+    "next": "^15.1.0",
+    "ox": "0.11.3",
+    "process": "^0.11.10",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.0",
+    "viem": "^2.45.2",
+    "wagmi": "^3.4.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.12.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.1.0",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0"
+  },
+  "overrides": {
+    "@coinbase/wallet-sdk": "4.2.0",
+    "ox": "0.11.3",
+    "@walletconnect/ethereum-provider": "2.22.4"
+  }
+}
