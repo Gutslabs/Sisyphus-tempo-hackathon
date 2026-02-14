@@ -80,8 +80,6 @@ These are the action names the model is allowed to emit (see `web/src/app/api/ch
 - DEX: `swap`, `place_limit_order`, `cancel_order`, `get_open_orders`
 - Token ops: `deploy_token`, `mint_token`, `create_pair`, `provide_liquidity`
 
-Old "agent/strategy" actions are hard-blocked client-side in `normalizeAction(...)` so they can't accidentally re-enter the execution path.
-
 ## How it works (architecture + flows)
 
 ### High-level architecture
