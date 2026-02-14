@@ -78,7 +78,8 @@ export function Providers({ children }: { children: ReactNode }) {
         supportedChains: [tempoModerato],
         defaultChain: tempoModerato,
         // Enable email login in the Privy modal (must also be enabled in Privy dashboard).
-        loginMethods: ["email", "wallet"],
+        // Enable passkey + email + external wallet login in the Privy modal (must also be enabled in Privy dashboard).
+        loginMethods: ["passkey", "email", "wallet"],
         // Customize Privy's appearance
         appearance: {
           theme: mode,

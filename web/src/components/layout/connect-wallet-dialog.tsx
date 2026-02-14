@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import {
     Email as EmailIcon,
+    Fingerprint as FingerprintIcon,
     Wallet as WalletIcon,
     Close as CloseIcon,
 } from "@mui/icons-material";
@@ -30,6 +31,10 @@ interface ConnectWalletDialogProps {
 export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps) {
     const theme = useTheme();
     const { login } = usePrivy();
+    const handlePasskey = () => {
+        login({ loginMethods: ["passkey"] });
+        onClose();
+    };
     const handleEmail = () => {
         login({ loginMethods: ["email"] });
         onClose();
@@ -67,11 +72,38 @@ export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps)
             <DialogContent sx={{ p: 0 }}>
                 <Box sx={{ px: 3, pb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                        Sign in with email or connect an external wallet.
+                        Sign in with passkey or email, or connect an external wallet.
                     </Typography>
                 </Box>
 
                 <List sx={{ px: 2, pb: 3 }}>
+                    <ListItem disablePadding sx={{ mb: 1.5 }}>
+                        <ListItemButton
+                            onClick={handlePasskey}
+                            sx={{
+                                borderRadius: 3,
+                                border: `1px solid ${theme.palette.divider}`,
+                                py: 1.5,
+                                transition: "all 0.2s",
+                                "&:hover": {
+                                    borderColor: theme.palette.primary.main,
+                                    bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                    transform: "translateY(-1px)",
+                                    boxShadow: 2
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ minWidth: 40, color: "primary.main" }}>
+                                <FingerprintIcon />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary="Continue with Passkey"
+                                secondary="Biometric / security key"
+                                primaryTypographyProps={{ fontWeight: 600 }}
+                            />
+                        </ListItemButton>
+                    </ListItem>
+
                     <ListItem disablePadding sx={{ mb: 1.5 }}>
                         <ListItemButton
                             onClick={handleEmail}
