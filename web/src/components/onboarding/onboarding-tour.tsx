@@ -265,7 +265,33 @@ export function OnboardingTour() {
 
   return (
     <Portal>
-      {/* Highlight with outside dim (click-through) */}
+      {/* Blur+dim everything except the target rectangle. */}
+      {(() => {
+        const blurSx = {
+          position: "fixed" as const,
+          zIndex: 1400,
+          pointerEvents: "auto" as const, // block outside clicks; the target itself remains clickable
+          bgcolor: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        };
+        const rightW = Math.max(0, window.innerWidth - (hl.left + hl.width));
+        const bottomH = Math.max(0, window.innerHeight - (hl.top + hl.height));
+        return (
+          <>
+            {/* Top */}
+            <Box sx={{ ...blurSx, top: 0, left: 0, width: "100%", height: Math.max(0, hl.top) }} />
+            {/* Left */}
+            <Box sx={{ ...blurSx, top: hl.top, left: 0, width: Math.max(0, hl.left), height: hl.height }} />
+            {/* Right */}
+            <Box sx={{ ...blurSx, top: hl.top, left: hl.left + hl.width, width: rightW, height: hl.height }} />
+            {/* Bottom */}
+            <Box sx={{ ...blurSx, top: hl.top + hl.height, left: 0, width: "100%", height: bottomH }} />
+          </>
+        );
+      })()}
+
+      {/* Target outline (no blur) */}
       <Box
         sx={{
           position: "fixed",
@@ -274,12 +300,10 @@ export function OnboardingTour() {
           width: hl.width,
           height: hl.height,
           borderRadius: 2,
-          zIndex: 1400,
+          zIndex: 1450,
           pointerEvents: "none",
-          boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)",
-          outline: "1px solid rgba(255,255,255,0.18)",
-          background: "rgba(255,255,255,0.03)",
-          backdropFilter: "blur(1px)",
+          outline: "2px solid rgba(255,255,255,0.22)",
+          boxShadow: "0 0 0 1px rgba(0,0,0,0.25), 0 10px 30px rgba(0,0,0,0.45)",
         }}
       />
 
