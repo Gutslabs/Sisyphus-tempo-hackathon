@@ -32,7 +32,7 @@ interface ConnectWalletDialogProps {
 
 export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps) {
     const theme = useTheme();
-    const { login } = usePrivy();
+    const { ready, authenticated, login, linkEmail } = usePrivy();
     const { connectors, connect, isPending } = useConnect();
     const webAuthnConnector = useMemo(() => connectors.find((c) => c.id === "webAuthn"), [connectors]);
     const injectedConnector = useMemo(() => connectors.find((c) => c.id === "injected"), [connectors]);
@@ -51,7 +51,12 @@ export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps)
     };
 
     const handleEmail = () => {
-        login({ loginMethods: ["email"] });
+        if (!ready) return;
+        if (authenticated) {
+            linkEmail();
+        } else {
+            login({ loginMethods: ["email"] });
+        }
         onClose();
     };
     const handleWallet = () => {
@@ -169,8 +174,8 @@ export function ConnectWalletDialog({ open, onClose }: ConnectWalletDialogProps)
                                 <EmailIcon />
                             </ListItemIcon>
                             <ListItemText
-                                primary="Continue with Email"
-                                secondary="One-time code"
+                                primary={authenticated ? "Link Email" : "Continue with Email"}
+                                secondary={authenticated ? "Add email to your account" : "One-time code"}
                                 primaryTypographyProps={{ fontWeight: 600 }}
                             />
                         </ListItemButton>
