@@ -11,6 +11,30 @@ import {
 } from "@/lib/tempo";
 import { usePrivyNonce } from "./use-privy-nonce";
 
+const BATCH_TRANSFER_ADDRESS = process.env.NEXT_PUBLIC_BATCH_TRANSFER_ADDRESS as
+  | Address
+  | undefined;
+
+const BATCH_TRANSFER_ABI = [
+  {
+    type: "function",
+    name: "batchTransfer",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "transfers",
+        type: "tuple[]",
+        components: [
+          { name: "token", type: "address" },
+          { name: "to", type: "address" },
+          { name: "amount", type: "uint256" },
+        ],
+      },
+    ],
+    outputs: [],
+  },
+] as const;
+
 export interface TokenBalance {
   token: TempoToken;
   raw: bigint;
@@ -166,7 +190,7 @@ export function useTempoFaucet() {
 
 // ── useTempoSend ──────────────────────────────────────────────
 export function useTempoSend() {
-  const { connector } = useAccount();
+  const { connector, address } = useAccount();
   const { sendTransactionAsync, isPending } = useSendTransaction();
   const { isPrivyEmbedded, getNextNonce } = usePrivyNonce();
 
@@ -214,20 +238,26 @@ export function useTempoSend() {
     onProgress?: (completed: number, total: number, lastResult: SendResult) => void,
   ): Promise<SendResult[] | BatchSendResult> => {
     // Prepare transfer calls
-    const calls = transfers.map(({ tokenSymbol, amount, to }) => {
+    const prepared = transfers.map(({ tokenSymbol, amount, to }) => {
       const token = findToken(tokenSymbol);
       if (!token) throw new Error(`Token not found: ${tokenSymbol}`);
       const parsedAmount = parseUnits(amount, token.decimals);
 
       return {
-        to: token.address as Address,
-        data: encodeFunctionData({
+        tokenAddress: token.address as Address,
+        to,
+        amount: parsedAmount,
+        call: {
+          to: token.address as Address,
+          data: encodeFunctionData({
           abi: ERC20_ABI,
           functionName: "transfer",
           args: [to, parsedAmount],
         }),
+        },
       };
     });
+    const calls = prepared.map((p) => p.call);
 
     // Passkey: Use batch transaction (single TX with calls array)
     if (supportsBatchTx) {
@@ -246,6 +276,64 @@ export function useTempoSend() {
       // Report completion
       onProgress?.(transfers.length, transfers.length, { hash, explorerUrl: explorerTxUrl(hash) });
 
+      return result;
+    }
+
+    // Privy embedded wallet: Prefer a 1-TX batch by calling our BatchTransfer contract.
+    // This requires prior approvals (one-time) for each token to the BatchTransfer contract.
+    if (isPrivyEmbedded && BATCH_TRANSFER_ADDRESS && prepared.length > 1) {
+      if (!address) throw new Error("Wallet not connected");
+
+      const publicClient = getPublicClient();
+      const maxAllowance = 2n ** 256n - 1n;
+
+      // Sum required amounts per token.
+      const requiredByToken = new Map<Address, bigint>();
+      for (const p of prepared) {
+        requiredByToken.set(p.tokenAddress, (requiredByToken.get(p.tokenAddress) ?? 0n) + p.amount);
+      }
+
+      // Ensure approvals (best-effort). If approvals are missing, this will add extra txs.
+      for (const [tokenAddress, required] of requiredByToken) {
+        const allowance = await publicClient.readContract({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "allowance",
+          args: [address, BATCH_TRANSFER_ADDRESS],
+        });
+        if (allowance < required) {
+          const approveHash = await sendTransactionAsync({
+            to: tokenAddress,
+            data: encodeFunctionData({
+              abi: ERC20_ABI,
+              functionName: "approve",
+              args: [BATCH_TRANSFER_ADDRESS, maxAllowance],
+            }),
+            nonce: await getNextNonce(),
+          });
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        }
+      }
+
+      const batchHash = await sendTransactionAsync({
+        to: BATCH_TRANSFER_ADDRESS,
+        data: encodeFunctionData({
+          abi: BATCH_TRANSFER_ABI,
+          functionName: "batchTransfer",
+          args: [
+            prepared.map((p) => ({ token: p.tokenAddress, to: p.to, amount: p.amount })),
+          ],
+        }),
+        nonce: await getNextNonce(),
+      });
+
+      const result: BatchSendResult = {
+        hash: batchHash,
+        explorerUrl: explorerTxUrl(batchHash),
+        transferCount: transfers.length,
+        isBatch: true,
+      };
+      onProgress?.(transfers.length, transfers.length, { hash: batchHash, explorerUrl: explorerTxUrl(batchHash) });
       return result;
     }
 
