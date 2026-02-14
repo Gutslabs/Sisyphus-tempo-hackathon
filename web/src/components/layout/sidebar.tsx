@@ -16,6 +16,7 @@ import {
 import {
   Dashboard as DashboardIcon,
   Chat as ChatIcon,
+  Schedule as PaymentsIcon,
   ReceiptLong as TxIcon,
   Circle as CircleIcon,
   ChevronRight as ChevronRightIcon,
@@ -28,6 +29,7 @@ import { useState, useEffect } from "react";
 const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
   { id: "chat", label: "AI Chat", icon: <ChatIcon /> },
+  { id: "payments", label: "Payments", icon: <PaymentsIcon /> },
   { id: "tx", label: "TX", icon: <TxIcon /> },
 ];
 

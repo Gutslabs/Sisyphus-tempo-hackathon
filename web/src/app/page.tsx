@@ -5,12 +5,23 @@ import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Dashboard } from "@/components/dashboard/dashboard";
 import { ChatPanel } from "@/components/chat/chat-panel";
+import { PaymentsView } from "@/components/payments/payments-view";
 import { TxView } from "@/components/tx/tx-view";
 
-export type View = "dashboard" | "chat" | "tx";
+export type View = "dashboard" | "chat" | "payments" | "tx";
 
-const VIEW_HASH: Record<View, string> = { dashboard: "dashboard", chat: "chat", tx: "tx" };
-const HASH_VIEW: Record<string, View> = { dashboard: "dashboard", chat: "chat", tx: "tx" };
+const VIEW_HASH: Record<View, string> = {
+  dashboard: "dashboard",
+  chat: "chat",
+  payments: "payments",
+  tx: "tx",
+};
+const HASH_VIEW: Record<string, View> = {
+  dashboard: "dashboard",
+  chat: "chat",
+  payments: "payments",
+  tx: "tx",
+};
 
 function viewFromHash(): View {
   if (typeof window === "undefined") return "dashboard";
@@ -60,6 +71,7 @@ export default function Home() {
         <main className="flex-1 min-h-0 min-w-0 w-full overflow-y-auto overflow-x-hidden flex flex-col">
           {view === "dashboard" && <Dashboard />}
           {view === "chat" && <ChatPanel />}
+          {view === "payments" && <PaymentsView />}
           {view === "tx" && <TxView />}
         </main>
       </div>
