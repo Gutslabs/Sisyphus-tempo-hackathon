@@ -16,6 +16,8 @@ type TourStep = {
 
 const STORAGE_DONE = "sisyphus_onboarding_v1_done";
 const STORAGE_ACTIVE = "sisyphus_onboarding_active";
+const STORAGE_WAIT_CONNECT = "sisyphus_onboarding_wait_connect";
+const STORAGE_RESUME_IDX = "sisyphus_onboarding_resume_idx";
 
 function currentView(): ViewId {
   const raw = typeof window === "undefined" ? "dashboard" : window.location.hash.slice(1) || "dashboard";
@@ -168,6 +170,26 @@ export function OnboardingTour() {
     }
   }, [mounted]);
 
+  // If we paused the tour waiting for a wallet connection, resume once connected.
+  useEffect(() => {
+    if (!mounted) return;
+    if (typeof window === "undefined") return;
+    if (!isConnected) return;
+    const waiting = window.localStorage.getItem(STORAGE_WAIT_CONNECT) === "1";
+    if (!waiting) return;
+
+    const resumeRaw = window.localStorage.getItem(STORAGE_RESUME_IDX);
+    const resume = resumeRaw ? Number(resumeRaw) : 0;
+    window.localStorage.removeItem(STORAGE_WAIT_CONNECT);
+    window.localStorage.removeItem(STORAGE_RESUME_IDX);
+
+    // Only resume if the tour isn't already visible.
+    if (!open) {
+      setIdx(Number.isFinite(resume) ? Math.max(0, resume) : 0);
+      setOpen(true);
+    }
+  }, [mounted, isConnected, open]);
+
   // Keep the sidebar from auto-collapsing while the tour is active.
   useEffect(() => {
     if (!mounted) return;
@@ -190,6 +212,32 @@ export function OnboardingTour() {
       window.localStorage.removeItem(STORAGE_ACTIVE);
     }
   };
+
+  // When the user clicks "Connect" during the connect step, temporarily hide the tour.
+  // This prevents the blurred overlay from blocking interaction with the connect dialog.
+  useEffect(() => {
+    if (!mounted) return;
+    if (!open) return;
+    if (!step || step.id !== "wallet-connect") return;
+    if (typeof window === "undefined") return;
+
+    const onDocClick = (ev: MouseEvent) => {
+      const target = ev.target as Element | null;
+      if (!target) return;
+      const connectBtn = target.closest(step.target);
+      if (!connectBtn) return;
+
+      // Resume from the next step once the wallet becomes connected.
+      window.localStorage.setItem(STORAGE_WAIT_CONNECT, "1");
+      window.localStorage.setItem(STORAGE_RESUME_IDX, "1");
+
+      // Let the click open the dialog first, then hide the tour.
+      window.setTimeout(() => close(false), 0);
+    };
+
+    document.addEventListener("click", onDocClick, true);
+    return () => document.removeEventListener("click", onDocClick, true);
+  }, [mounted, open, step]);
 
   // Resolve + track target position
   useEffect(() => {
