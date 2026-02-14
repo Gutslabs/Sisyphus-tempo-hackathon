@@ -39,7 +39,7 @@ import { type ChatMessage as ChatMessageType } from "@/hooks/use-chat-history";
 import { useChatSessions } from "@/hooks/use-chat-sessions";
 import { useChatSession } from "@/hooks/use-chat-session";
 import { recordTxFromActionResult, recordTransaction } from "@/lib/record-tx";
-import { parsePaymentFile, summarizePayments, formatPaymentTable, type ParseResult } from "@/lib/file-parser";
+import { summarizePayments, formatPaymentTable, type ParseResult } from "@/lib/file-parser";
 import { SchedulePaymentDialog } from "@/components/chat/schedule-payment-dialog";
 import { RecurringPaymentDialog } from "@/components/chat/recurring-payment-dialog";
 import { ChatMessage, executeAction, normalizeAction } from "@/components/chat/chat-actions";
@@ -58,7 +58,7 @@ const WELCOME_MESSAGE: ChatMessageType = {
     '• Batch transfers: "Send 50 AlphaUSD to 0x1, 0x2, 0x3"\n' +
     '• Scheduled payment: "On March 15 send 100 AlphaUSD to 0x..."\n' +
     '• Recurring payment: "Send 50 pathUSD to 0x... every week"\n' +
-    '• Upload CSV/TXT: Bulk parallel payments from file\n' +
+    '• Upload CSV/TXT/XLSX/PDF: Bulk parallel payments from file\n' +
     '• Check balances: "Show my balance"\n' +
     '• Faucet: "Get testnet funds"',
   // Use stable timestamp to avoid SSR/client mismatch.
@@ -74,9 +74,11 @@ export function ChatPanel() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
   // Avoid hydration mismatch with wagmi / window usage.
   const [mounted, setMounted] = useState(false);
@@ -160,24 +162,18 @@ export function ChatPanel() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    if (!["csv", "txt"].includes(ext ?? "")) {
-      await addMessage({
-        id: `err-${Date.now()}`,
-        role: "system",
-        content: "Unsupported file format. Please upload a .csv or .txt file.",
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
+  const parseAndExecutePaymentsFile = useCallback(async (file: File) => {
     try {
-      const content = await file.text();
-      const result: ParseResult = parsePaymentFile(content, file.name);
+      const form = new FormData();
+      form.append("file", file, file.name);
+      const res = await fetch("/api/payments/parse", { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string })?.error ?? "Failed to parse file");
+      }
+      const result = (data as { result?: ParseResult })?.result;
+      if (!result) throw new Error("Missing parse result");
+
       if (result.total === 0) {
         await addMessage({
           id: `err-${Date.now()}`,
@@ -227,7 +223,11 @@ export function ChatPanel() {
           actionResult: { success: true, data: sendResult },
           timestamp: Date.now(),
         });
-        recordTxFromActionResult(walletAddress ?? undefined, { action: "send_parallel", isBatch: isBatchResult }, sendResult);
+        recordTxFromActionResult(
+          walletAddress ?? undefined,
+          { action: "send_parallel", isBatch: isBatchResult },
+          sendResult,
+        );
       } catch (err) {
         await addMessage({
           id: `ai-err-${Date.now()}`,
@@ -248,7 +248,58 @@ export function ChatPanel() {
     } finally {
       setIsLoading(false);
     }
-  }, [addMessage, sendParallel, refreshBalances]);
+  }, [addMessage, sendParallel, refreshBalances, walletAddress]);
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    await parseAndExecutePaymentsFile(file);
+  }, [parseAndExecutePaymentsFile]);
+
+  const handleDropFiles = useCallback(async (files: FileList | File[]) => {
+    const list = Array.from(files ?? []);
+    const file = list[0];
+    if (!file) return;
+    if (list.length > 1) {
+      await addMessage({
+        id: `err-${Date.now()}`,
+        role: "system",
+        content: "Please drop a single file at a time.",
+        timestamp: Date.now(),
+      });
+    }
+    await parseAndExecutePaymentsFile(file);
+  }, [addMessage, parseAndExecutePaymentsFile]);
+
+  const onDragEnter = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer?.types?.includes("Files")) return;
+    e.preventDefault();
+    dragCounterRef.current += 1;
+    setDragActive(true);
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer?.types?.includes("Files")) return;
+    e.preventDefault();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) setDragActive(false);
+  }, []);
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer?.types?.includes("Files")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setDragActive(true);
+  }, []);
+
+  const onDrop = useCallback(async (e: React.DragEvent) => {
+    if (!e.dataTransfer?.files?.length) return;
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setDragActive(false);
+    await handleDropFiles(e.dataTransfer.files);
+  }, [handleDropFiles]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -443,6 +494,10 @@ export function ChatPanel() {
 
       {/* Main Chat Area - full width, column flex so only messages scroll */}
       <Box
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         sx={{
           flex: 1,
           minWidth: 0,
@@ -453,8 +508,32 @@ export function ChatPanel() {
           flexDirection: "column",
           overflow: "hidden",
           bgcolor: "background.paper",
+          position: "relative",
         }}
       >
+        {dragActive && (
+          <Box
+            sx={(theme) => ({
+              position: "absolute",
+              inset: 8,
+              zIndex: 50,
+              borderRadius: 3,
+              border: `2px dashed ${theme.palette.primary.main}`,
+              bgcolor: theme.palette.mode === "dark" ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.85)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              pointerEvents: "none",
+            })}
+          >
+            <Typography sx={{ fontWeight: 800 }}>Drop a file to bulk send</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Supported: CSV, TXT, XLSX, XLS, PDF
+            </Typography>
+          </Box>
+        )}
         {/* Chat Header */}
         <Box sx={{ flexShrink: 0, px: 3, py: 1.5, borderBottom: 1, borderColor: "divider", display: "flex", alignItems: "center" }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary" }}>
@@ -532,7 +611,13 @@ export function ChatPanel() {
                 <IconButton onClick={() => fileInputRef.current?.click()} disabled={isLoading} size="small">
                   <PaperclipIcon />
                 </IconButton>
-                <input ref={fileInputRef} type="file" accept=".csv,.txt" onChange={handleFileUpload} style={{ display: "none" }} />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.txt,.xlsx,.xls,.pdf,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={handleFileUpload}
+                  style={{ display: "none" }}
+                />
                 <Tooltip title="Schedule payment">
                   <span>
                     <IconButton onClick={() => setScheduleDialogOpen(true)} disabled={!walletAddress || isLoading} size="small" color="inherit">
