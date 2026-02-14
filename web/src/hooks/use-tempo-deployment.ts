@@ -14,6 +14,7 @@ import {
     scanForToken,
     saveTokenToStorage,
 } from "@/lib/tempo";
+import { usePrivyNonce } from "./use-privy-nonce";
 
 export interface DeployTokenResult {
     tokenAddress: Address;
@@ -36,6 +37,7 @@ export interface CreatePairResult {
 export function useTempoDeployment() {
     const { address } = useAccount();
     const { sendTransactionAsync, isPending } = useSendTransaction();
+    const { getNextNonce } = usePrivyNonce();
 
     // Deploy a new TIP-20 Token
     const deployToken = useCallback(
@@ -59,6 +61,7 @@ export function useTempoDeployment() {
                     functionName: "createToken",
                     args: [name, symbol, currency, PATH_USD, address, saltHex],
                 }),
+                nonce: await getNextNonce(),
             });
 
             const publicClient = getPublicClient();
@@ -99,7 +102,7 @@ export function useTempoDeployment() {
                 explorerUrl: explorerTxUrl(hash),
             };
         },
-        [address, sendTransactionAsync]
+        [address, sendTransactionAsync, getNextNonce]
     );
 
     // Mint tokens
@@ -171,7 +174,8 @@ export function useTempoDeployment() {
                             abi: mintAbi,
                             functionName: "grantRole",
                             args: [ISSUER_ROLE, address]
-                        })
+                        }),
+                        nonce: await getNextNonce(),
                     });
                     await publicClient.waitForTransactionReceipt({ hash: grantHash });
                 } catch (e) {
@@ -185,12 +189,13 @@ export function useTempoDeployment() {
                     abi: mintAbi,
                     functionName: "mint",
                     args: [recipient, parsedAmount]
-                })
+                }),
+                nonce: await getNextNonce(),
             });
 
             return { hash, explorerUrl: explorerTxUrl(hash) };
         },
-        [address, sendTransactionAsync]
+        [address, sendTransactionAsync, getNextNonce]
     );
 
     // Create Trading Pair
@@ -227,7 +232,8 @@ export function useTempoDeployment() {
                     abi: EXCHANGE_ABI,
                     functionName: "createPair",
                     args: [baseAddress]
-                })
+                }),
+                nonce: await getNextNonce(),
             });
 
             const publicClient = getPublicClient();
@@ -261,7 +267,7 @@ export function useTempoDeployment() {
                 explorerUrl: explorerTxUrl(hash)
             };
         },
-        [address, sendTransactionAsync]
+        [address, sendTransactionAsync, getNextNonce]
     );
 
     return { deployToken, mintToken, createPair, isDeploying: isPending };

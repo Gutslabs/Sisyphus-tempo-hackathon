@@ -9,6 +9,7 @@ import {
   findToken, explorerTxUrl, getPublicClient, priceToTick, type TempoToken,
   getStoredTokens, formatTokenAmount, type StoredToken
 } from "@/lib/tempo";
+import { usePrivyNonce } from "./use-privy-nonce";
 
 export interface TokenBalance {
   token: TempoToken;
@@ -167,10 +168,10 @@ export function useTempoFaucet() {
 export function useTempoSend() {
   const { connector } = useAccount();
   const { sendTransactionAsync, isPending } = useSendTransaction();
+  const { isPrivyEmbedded, getNextNonce } = usePrivyNonce();
 
   // Check if current connector supports batch transactions (Passkey / WebAuthn)
   const supportsBatchTx = connector?.name === "WebAuthn" || connector?.id === "webAuthn";
-  const isPrivyEmbedded = typeof connector?.id === "string" && connector.id.startsWith("io.privy.wallet");
 
   /**
    * Send a single token transfer
@@ -192,10 +193,11 @@ export function useTempoSend() {
         functionName: "transfer",
         args: [to, parsedAmount],
       }),
+      nonce: await getNextNonce(),
     });
 
     return { hash, explorerUrl: explorerTxUrl(hash) };
-  }, [sendTransactionAsync]);
+  }, [sendTransactionAsync, getNextNonce]);
 
   /**
    * Send multiple transfers.
@@ -257,6 +259,7 @@ export function useTempoSend() {
       const hash = await sendTransactionAsync({
         to: call.to,
         data: call.data,
+        nonce: await getNextNonce(),
       });
 
       const result: SendResult = { hash, explorerUrl: explorerTxUrl(hash) };
@@ -276,7 +279,7 @@ export function useTempoSend() {
     }
 
     return results;
-  }, [sendTransactionAsync, supportsBatchTx, isPrivyEmbedded]);
+  }, [sendTransactionAsync, supportsBatchTx, isPrivyEmbedded, getNextNonce]);
 
   return { sendPayment, sendParallel, sending: isPending, supportsBatchTx };
 }

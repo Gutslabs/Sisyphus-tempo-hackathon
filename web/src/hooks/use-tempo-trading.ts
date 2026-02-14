@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { useAccount, useSendTransaction } from "wagmi";
 import { type Address, encodeFunctionData, parseUnits, decodeEventLog } from "viem";
 import {
@@ -8,6 +8,7 @@ import {
     PAYMENT_SCHEDULER_ADDRESS, PAYMENT_SCHEDULER_ABI,
     findToken, scanForToken, explorerTxUrl, getPublicClient, priceToTick, getStoredTokens,
 } from "@/lib/tempo";
+import { usePrivyNonce } from "./use-privy-nonce";
 
 // ── useTempoSwap ────────────────────────────────────────────────
 // Swap stablecoins on Tempo DEX (0xdec0...)
@@ -22,10 +23,9 @@ export interface SwapResult {
 }
 
 export function useTempoSwap() {
-    const { address, connector } = useAccount();
+    const { address } = useAccount();
     const { sendTransactionAsync, isPending } = useSendTransaction();
-    const isPrivyEmbedded =
-        typeof connector?.id === "string" && connector.id.startsWith("io.privy.wallet");
+    const { isPrivyEmbedded, getNextNonce } = usePrivyNonce();
 
     /**
      * Get expected output amount for a swap (view call, no TX)
@@ -93,7 +93,7 @@ export function useTempoSwap() {
             args: [tokenIn.address, tokenOut.address, amountIn128],
         });
         return amountOut;
-    }, []);
+    }, [address]);
 
     /**
      * Execute swap: sell amountIn of tokenIn for at least minAmountOut of tokenOut.
@@ -163,6 +163,7 @@ export function useTempoSwap() {
                     functionName: "approve",
                     args: [TEMPO_EXCHANGE_ADDRESS, amountIn128],
                 }),
+                nonce: await getNextNonce(),
             });
             if (isPrivyEmbedded) {
                 await publicClient.waitForTransactionReceipt({ hash: approveHash });
@@ -179,6 +180,7 @@ export function useTempoSwap() {
                 functionName: "swapExactAmountIn",
                 args: [tokenIn.address, tokenOut.address, amountIn128, minAmountOut],
             }),
+            nonce: await getNextNonce(),
         });
 
         const amountOutFormatted = (Number(amountOutExpected) / 10 ** tokenOut.decimals).toFixed(tokenOut.decimals);
@@ -191,7 +193,7 @@ export function useTempoSwap() {
             amountIn,
             amountOut: amountOutFormatted,
         };
-    }, [address, getQuote, sendTransactionAsync, isPrivyEmbedded]);
+    }, [address, getQuote, sendTransactionAsync, isPrivyEmbedded, getNextNonce]);
 
     return { swap, getQuote, swapping: isPending };
 }
@@ -214,6 +216,7 @@ const PATH_USD = TEMPO_TOKENS[0]!; // pathUSD, quote token for DEX pairs
 export function useTempoLimitOrder() {
     const { address } = useAccount();
     const { sendTransactionAsync, isPending } = useSendTransaction();
+    const { getNextNonce } = usePrivyNonce();
 
     const ensureAllowance = useCallback(
         async (tokenAddress: Address, spender: Address, amountRaw: bigint) => {
@@ -233,11 +236,12 @@ export function useTempoLimitOrder() {
                         functionName: "approve",
                         args: [spender, amountRaw],
                     }),
+                    nonce: await getNextNonce(),
                 });
                 await publicClient.waitForTransactionReceipt({ hash });
             }
         },
-        [address, sendTransactionAsync],
+        [address, sendTransactionAsync, getNextNonce],
     );
 
     /**
@@ -280,6 +284,7 @@ export function useTempoLimitOrder() {
                     functionName: "place",
                     args: [token.address, amount128, isBid, tick],
                 }),
+                nonce: await getNextNonce(),
             });
 
             const publicClient = getPublicClient();
@@ -387,7 +392,7 @@ export function useTempoLimitOrder() {
                 price,
             };
         },
-        [address, ensureAllowance, sendTransactionAsync],
+        [address, ensureAllowance, sendTransactionAsync, getNextNonce],
     );
 
     const cancelOrder = useCallback(
@@ -400,10 +405,11 @@ export function useTempoLimitOrder() {
                     functionName: "cancel",
                     args: [id],
                 }),
+                nonce: await getNextNonce(),
             });
             return { hash, explorerUrl: explorerTxUrl(hash) };
         },
-        [sendTransactionAsync],
+        [sendTransactionAsync, getNextNonce],
     );
 
     const provideLiquidity = useCallback(
@@ -452,6 +458,7 @@ export function useTempoScheduler() {
     const { address } = useAccount();
     const { sendTransactionAsync, isPending } = useSendTransaction();
     const maxAllowance = 2n ** 256n - 1n;
+    const { getNextNonce } = usePrivyNonce();
 
     const ensureAllowance = useCallback(
         async (tokenAddress: Address, amountRaw: bigint) => {
@@ -471,11 +478,12 @@ export function useTempoScheduler() {
                         functionName: "approve",
                         args: [PAYMENT_SCHEDULER_ADDRESS, maxAllowance],
                     }),
+                    nonce: await getNextNonce(),
                 });
                 await publicClient.waitForTransactionReceipt({ hash });
             }
         },
-        [address, sendTransactionAsync],
+        [address, sendTransactionAsync, getNextNonce],
     );
 
     /**
@@ -524,6 +532,7 @@ export function useTempoScheduler() {
                         functionName: "createScheduled",
                         args: [token.address, t.to, amountRaw, BigInt(executeAtSeconds)],
                     }),
+                    nonce: await getNextNonce(),
                 });
 
                 results.push({
@@ -539,7 +548,7 @@ export function useTempoScheduler() {
 
             return results;
         },
-        [address, ensureAllowance, sendTransactionAsync],
+        [address, ensureAllowance, sendTransactionAsync, getNextNonce],
     );
 
     /**
@@ -587,6 +596,7 @@ export function useTempoScheduler() {
                         BigInt(firstDue),
                     ],
                 }),
+                nonce: await getNextNonce(),
             });
 
             return {
@@ -600,7 +610,7 @@ export function useTempoScheduler() {
                 explorerUrl: explorerTxUrl(hash),
             };
         },
-        [address, ensureAllowance, sendTransactionAsync],
+        [address, ensureAllowance, sendTransactionAsync, getNextNonce],
     );
 
     /**
@@ -615,10 +625,11 @@ export function useTempoScheduler() {
                     functionName: "executeScheduled",
                     args: [BigInt(scheduleId)],
                 }),
+                nonce: await getNextNonce(),
             });
             return { hash, explorerUrl: explorerTxUrl(hash) };
         },
-        [sendTransactionAsync],
+        [sendTransactionAsync, getNextNonce],
     );
 
     return {
