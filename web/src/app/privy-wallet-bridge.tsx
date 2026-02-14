@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePrivy, useWallets, type ConnectedWallet } from "@privy-io/react-auth";
 import type { Connector, CreateConnectorFn } from "wagmi";
+import { connect as connectAction } from "wagmi/actions";
 import { injected } from "wagmi/connectors";
 import { tempoModerato } from "viem/chains";
 import { config } from "@/lib/wagmi-config";
@@ -59,6 +60,17 @@ export function PrivyWalletBridge() {
           continue;
         }
 
+        // Ensure embedded wallet is on Tempo Moderato. Privy notes that switching chains
+        // does not update existing provider instances, so we switch before requesting one.
+        try {
+          const currentChain = chainIdFromEip155(wallet.chainId);
+          if (currentChain !== tempoModerato.id) {
+            await wallet.switchChain(tempoModerato.id);
+          }
+        } catch {
+          // Ignore; if switching fails, we still attempt to build the provider.
+        }
+
         const provider = await wallet.getEthereumProvider();
         const connectorFn = injected({
           target: {
@@ -89,32 +101,12 @@ export function PrivyWalletBridge() {
         privyWallets.length > 0 &&
         privyConnectors.length > 0
       ) {
-        const wallet = privyWallets[0]!;
         const connector = privyConnectors[0]!;
-
-        let chainId = chainIdFromEip155(wallet.chainId) ?? tempoModerato.id;
-        if (!config.chains.find((c) => c.id === chainId)) chainId = tempoModerato.id;
-
-        await config.storage?.removeItem(`${connector.id}.disconnected`);
-        await config.storage?.setItem("recentConnectorId", connector.id);
-
-        const connections = new Map([
-          [
-            connector.uid,
-            {
-              accounts: [wallet.address],
-              chainId,
-              connector,
-            },
-          ],
-        ]);
-        config.setState((s) => ({
-          ...s,
-          chainId,
-          connections,
-          current: connector.uid,
-          status: "connected",
-        }));
+        try {
+          await connectAction(config, { connector, chainId: tempoModerato.id });
+        } catch {
+          // Ignore if already connected or connect fails; user can still connect manually.
+        }
       }
     })().catch((e) => {
       console.warn("PrivyWalletBridge failed:", e);

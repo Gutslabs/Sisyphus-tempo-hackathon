@@ -170,6 +170,7 @@ export function useTempoSend() {
 
   // Check if current connector supports batch transactions (Passkey / WebAuthn)
   const supportsBatchTx = connector?.name === "WebAuthn" || connector?.id === "webAuthn";
+  const isPrivyEmbedded = typeof connector?.id === "string" && connector.id.startsWith("io.privy.wallet");
 
   /**
    * Send a single token transfer
@@ -248,6 +249,7 @@ export function useTempoSend() {
 
     // MetaMask/Injected: Sequential transfers
     const results: SendResult[] = [];
+    const publicClient = getPublicClient();
 
     for (let i = 0; i < calls.length; i++) {
       const call = calls[i];
@@ -261,14 +263,20 @@ export function useTempoSend() {
       results.push(result);
       onProgress?.(results.length, transfers.length, result);
 
-      // Small delay between TX submissions to avoid rate limits
-      if (i < calls.length - 1) {
-        await new Promise((r) => setTimeout(r, 300));
+      // Privy embedded wallet providers can struggle with pending nonce tracking.
+      // Waiting for receipt avoids "nonce too low" on back-to-back transactions.
+      if (isPrivyEmbedded) {
+        await publicClient.waitForTransactionReceipt({ hash });
+      } else {
+        // Small delay between TX submissions to avoid rate limits
+        if (i < calls.length - 1) {
+          await new Promise((r) => setTimeout(r, 300));
+        }
       }
     }
 
     return results;
-  }, [sendTransactionAsync, supportsBatchTx]);
+  }, [sendTransactionAsync, supportsBatchTx, isPrivyEmbedded]);
 
   return { sendPayment, sendParallel, sending: isPending, supportsBatchTx };
 }
@@ -289,4 +297,3 @@ export {
   type DeployTokenResult,
   type CreatePairResult,
 } from "./use-tempo-deployment";
-

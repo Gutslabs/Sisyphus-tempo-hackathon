@@ -22,8 +22,10 @@ export interface SwapResult {
 }
 
 export function useTempoSwap() {
-    const { address } = useAccount();
+    const { address, connector } = useAccount();
     const { sendTransactionAsync, isPending } = useSendTransaction();
+    const isPrivyEmbedded =
+        typeof connector?.id === "string" && connector.id.startsWith("io.privy.wallet");
 
     /**
      * Get expected output amount for a swap (view call, no TX)
@@ -154,7 +156,7 @@ export function useTempoSwap() {
         });
 
         if (currentAllowance < amountIn128) {
-            await sendTransactionAsync({
+            const approveHash = await sendTransactionAsync({
                 to: tokenIn.address,
                 data: encodeFunctionData({
                     abi: ERC20_ABI,
@@ -162,6 +164,9 @@ export function useTempoSwap() {
                     args: [TEMPO_EXCHANGE_ADDRESS, amountIn128],
                 }),
             });
+            if (isPrivyEmbedded) {
+                await publicClient.waitForTransactionReceipt({ hash: approveHash });
+            }
         }
 
         const amountOutExpected = await getQuote(tokenInSymbol, tokenOutSymbol, amountIn);
@@ -186,7 +191,7 @@ export function useTempoSwap() {
             amountIn,
             amountOut: amountOutFormatted,
         };
-    }, [address, getQuote, sendTransactionAsync]);
+    }, [address, getQuote, sendTransactionAsync, isPrivyEmbedded]);
 
     return { swap, getQuote, swapping: isPending };
 }
